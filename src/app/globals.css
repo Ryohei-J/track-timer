@@ -2,25 +2,49 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1a1a1a;
+  --c-work: #2563eb;
+  --c-break: #16a34a;
+  --c-surface: #f5f5f5;
+  --c-surface-alt: #e5e7eb;
+  --c-text-primary: #1a1a1a;
+  --c-text-secondary: #6b7280;
+  --c-vinyl-groove: #3a3a3a;
+  --c-vinyl-groove-alt: #2d2d2d;
+}
+
+.dark {
+  --background: #1e1e2e;
+  --foreground: #f0f0f0;
+  --c-work: #3b82f6;
+  --c-break: #22c55e;
+  --c-surface: #1e1e2e;
+  --c-surface-alt: #2a2a3e;
+  --c-text-primary: #f0f0f0;
+  --c-text-secondary: #a0a0b0;
+  --c-vinyl-groove: #1a1a1a;
+  --c-vinyl-groove-alt: #0d0d0d;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-work: var(--c-work);
+  --color-break: var(--c-break);
+  --color-surface: var(--c-surface);
+  --color-surface-alt: var(--c-surface-alt);
+  --color-text-primary: var(--c-text-primary);
+  --color-text-secondary: var(--c-text-secondary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+.yt-player-container iframe {
+  width: 100%;
+  height: 100%;
 }

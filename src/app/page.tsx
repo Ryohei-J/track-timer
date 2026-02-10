@@ -1,65 +1,109 @@
-import Image from "next/image";
+"use client";
+
+import { useCallback } from "react";
+import { useTimer } from "@/hooks/useTimer";
+import { useYouTubeApi } from "@/hooks/useYouTubeApi";
+import { useDualDeckController } from "@/hooks/useDualDeckController";
+import { DeckPanel } from "@/components/DeckPanel";
+import { TimerDisplay } from "@/components/TimerDisplay";
+import { ControlBar } from "@/components/ControlBar";
+import { CycleSettings } from "@/components/CycleSettings";
+import { SessionIndicator } from "@/components/SessionIndicator";
+import { ErrorModal } from "@/components/ErrorModal";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Home() {
+  const timer = useTimer();
+  const ytApiReady = useYouTubeApi();
+  const deck = useDualDeckController(
+    timer.sessionType,
+    timer.status,
+    timer.remainingSeconds,
+    timer.isComplete,
+    ytApiReady,
+  );
+
+  const isRunning = timer.status !== "idle";
+
+  const handleStart = useCallback(() => {
+    deck.initializePlayers();
+    timer.start();
+  }, [deck, timer]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="min-h-screen bg-surface text-text-primary p-4 md:p-8 font-sans">
+      <div className="flex items-center justify-center mb-8 md:mb-12 relative">
+        <h1 className="text-2xl md:text-3xl font-bold text-center">PomoDisc</h1>
+        <div className="absolute right-0">
+          <ThemeToggle />
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr] gap-8 items-start">
+        {/* Left: Work Deck */}
+        <DeckPanel
+          type="work"
+          durationMinutes={timer.workDurationMinutes}
+          onDurationChange={timer.setWorkDuration}
+          isActive={isRunning && timer.sessionType === "work"}
+          isPlaying={timer.status === "running" && timer.sessionType === "work"}
+          disabled={isRunning}
+          youtubeUrl={deck.workUrl}
+          onYoutubeUrlChange={deck.setWorkUrl}
+          youtubeElementId="yt-player-work"
+          urlError={deck.workUrlError}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+
+        {/* Center: Timer + Controls */}
+        <div className="flex flex-col items-center gap-6">
+          <TimerDisplay
+            remainingSeconds={timer.remainingSeconds}
+            sessionType={timer.sessionType}
+            status={timer.status}
+            isComplete={timer.isComplete}
+          />
+          <ControlBar
+            status={timer.status}
+            isComplete={timer.isComplete}
+            onStart={handleStart}
+            onPause={timer.pause}
+            onResume={timer.resume}
+            onReset={timer.reset}
+          />
+          <CycleSettings
+            totalCycles={timer.totalCycles}
+            onTotalCyclesChange={timer.setTotalCycles}
+            disabled={isRunning}
+          />
+          <SessionIndicator
+            sessionType={timer.sessionType}
+            currentCycle={timer.currentCycle}
+            totalCycles={timer.totalCycles}
+            status={timer.status}
+            isComplete={timer.isComplete}
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        {/* Right: Break Deck */}
+        <DeckPanel
+          type="break"
+          durationMinutes={timer.breakDurationMinutes}
+          onDurationChange={timer.setBreakDuration}
+          isActive={isRunning && timer.sessionType === "break"}
+          isPlaying={timer.status === "running" && timer.sessionType === "break"}
+          disabled={isRunning}
+          youtubeUrl={deck.breakUrl}
+          onYoutubeUrlChange={deck.setBreakUrl}
+          youtubeElementId="yt-player-break"
+          urlError={deck.breakUrlError}
+        />
+      </div>
+
+      <ErrorModal
+        isOpen={!!deck.playerError}
+        message={deck.playerError || ""}
+        onClose={deck.clearPlayerError}
+      />
+    </main>
   );
 }
