@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/components/Button";
 
@@ -10,6 +11,20 @@ interface ErrorModalProps {
 }
 
 export function ErrorModal({ isOpen, message, onClose }: ErrorModalProps) {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose],
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [isOpen, handleKeyDown]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -19,6 +34,9 @@ export function ErrorModal({ isOpen, message, onClose }: ErrorModalProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="error-modal-title"
         >
           <motion.div
             className="bg-surface rounded-2xl p-8 max-w-md border border-surface-alt"
@@ -27,7 +45,12 @@ export function ErrorModal({ isOpen, message, onClose }: ErrorModalProps) {
             exit={{ scale: 0.9, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold mb-3">Playback Error</h3>
+            <h3
+              id="error-modal-title"
+              className="text-lg font-semibold mb-3"
+            >
+              Playback Error
+            </h3>
             <p className="text-text-secondary mb-6">{message}</p>
             <Button onClick={onClose} className="w-full">
               OK

@@ -14,10 +14,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://pomotimerx.vercel.app"),
   title: "PomotimerX",
-  description: "Pomodoro timer with DJ turntable UI",
+  description:
+    "Pomodoro timer with YouTube music playback. Assign tracks to Work, Short Break, and Long Break sessions.",
   icons: {
     icon: "/favicon.ico",
+  },
+  openGraph: {
+    title: "PomotimerX",
+    description:
+      "Pomodoro timer with YouTube music playback. Assign tracks to Work, Short Break, and Long Break sessions.",
+    url: "https://pomotimerx.vercel.app",
+    siteName: "PomotimerX",
+    images: [{ url: "/logo.png", width: 512, height: 512, alt: "PomotimerX logo" }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "PomotimerX",
+    description:
+      "Pomodoro timer with YouTube music playback. Assign tracks to Work, Short Break, and Long Break sessions.",
+    images: ["/logo.png"],
   },
 };
 

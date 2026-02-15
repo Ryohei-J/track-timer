@@ -12,6 +12,7 @@ import { CycleSettings } from "@/components/CycleSettings";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import { ErrorModal } from "@/components/ErrorModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Footer } from "@/components/Footer";
 
 export default function Home() {
   const timer = useTimer();
@@ -32,7 +33,7 @@ export default function Home() {
   }, [deck, timer]);
 
   return (
-    <main className="min-h-screen bg-background text-text-primary p-4 md:p-8 font-sans flex items-start justify-center">
+    <main className="min-h-screen bg-background text-text-primary p-4 md:p-8 font-sans flex flex-col items-center">
       <div className="w-full max-w-6xl bg-surface rounded-2xl overflow-hidden shadow-xl">
         {/* Header: 3-column grid matching deck layout */}
         <div className="grid grid-cols-1 md:grid-cols-3 p-6 pb-4 items-start">
@@ -125,6 +126,8 @@ export default function Home() {
           />
         </div>
       </div>
+
+      <Footer />
 
       <ErrorModal
         isOpen={!!deck.playerError}

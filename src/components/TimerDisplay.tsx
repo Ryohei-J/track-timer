@@ -27,17 +27,26 @@ export function TimerDisplay({
   status,
   isComplete,
 }: TimerDisplayProps) {
+  const timeText = isComplete ? "00:00" : formatTime(remainingSeconds);
+  const sessionLabel = isComplete ? "Complete" : SESSION_LABELS[sessionType];
+
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div
+      className="flex flex-col items-center gap-1"
+      role="timer"
+      aria-label={`${sessionLabel} — ${timeText} remaining`}
+      aria-live="polite"
+      aria-atomic="true"
+    >
       <span className="text-xs font-medium uppercase tracking-widest text-accent h-4">
-        {isComplete ? "Complete" : SESSION_LABELS[sessionType]}
+        {sessionLabel}
       </span>
       <div
         className={`text-6xl md:text-8xl font-mono font-bold tabular-nums ${
           isComplete ? "text-text-secondary" : "text-text-primary"
         }`}
       >
-        {isComplete ? "00:00" : formatTime(remainingSeconds)}
+        {timeText}
       </div>
     </div>
   );
