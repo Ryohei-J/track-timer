@@ -31,72 +31,97 @@ export default function Home() {
   }, [deck, timer]);
 
   return (
-    <main className="min-h-screen bg-surface text-text-primary p-4 md:p-8 font-sans">
-      <div className="flex items-center justify-center mb-8 md:mb-12 relative">
-        <h1 className="text-2xl md:text-3xl font-bold text-center">PomotimerX</h1>
-        <div className="absolute right-0">
-          <ThemeToggle />
+    <main className="min-h-screen bg-background text-text-primary p-4 md:p-8 font-sans flex items-start justify-center">
+      <div className="w-full max-w-6xl bg-surface rounded-2xl overflow-hidden shadow-xl">
+        {/* Header: 3-column grid matching deck layout */}
+        <div className="grid grid-cols-1 md:grid-cols-3 p-6 pb-4 items-start">
+          {/* Left: Logo */}
+          <div className="flex items-center">
+            <h1 className="text-2xl md:text-3xl font-bold">PomotimerX</h1>
+          </div>
+
+          {/* Center: Timer + Controls */}
+          <div className="flex flex-col items-center gap-2">
+            <TimerDisplay
+              remainingSeconds={timer.remainingSeconds}
+              sessionType={timer.sessionType}
+              status={timer.status}
+              isComplete={timer.isComplete}
+            />
+            <ControlBar
+              status={timer.status}
+              isComplete={timer.isComplete}
+              onStart={handleStart}
+              onPause={timer.pause}
+              onResume={timer.resume}
+              onReset={timer.reset}
+            />
+            <SessionIndicator
+              sessionType={timer.sessionType}
+              currentCycle={timer.currentCycle}
+              totalCycles={timer.totalCycles}
+              status={timer.status}
+              isComplete={timer.isComplete}
+            />
+          </div>
+
+          {/* Right: Settings + Theme */}
+          <div className="flex flex-col items-end gap-3">
+            <ThemeToggle />
+            <CycleSettings
+              totalCycles={timer.totalCycles}
+              onTotalCyclesChange={timer.setTotalCycles}
+              longBreakInterval={timer.longBreakInterval}
+              onLongBreakIntervalChange={timer.setLongBreakInterval}
+              disabled={isRunning}
+            />
+          </div>
         </div>
-      </div>
 
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr] gap-8 items-start">
-        {/* Left: Work Deck */}
-        <DeckPanel
-          type="work"
-          durationMinutes={timer.workDurationMinutes}
-          onDurationChange={timer.setWorkDuration}
-          isActive={isRunning && timer.sessionType === "work"}
-          isPlaying={timer.status === "running" && timer.sessionType === "work"}
-          disabled={isRunning}
-          youtubeUrl={deck.workUrl}
-          onYoutubeUrlChange={deck.setWorkUrl}
-          youtubeElementId="yt-player-work"
-          urlError={deck.workUrlError}
-        />
+        {/* 3-Deck Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-divider border-t border-divider">
+          {/* Work Deck */}
+          <DeckPanel
+            type="work"
+            durationMinutes={timer.workDurationMinutes}
+            onDurationChange={timer.setWorkDuration}
+            isActive={isRunning && timer.sessionType === "work"}
 
-        {/* Center: Timer + Controls */}
-        <div className="flex flex-col items-center gap-6">
-          <TimerDisplay
-            remainingSeconds={timer.remainingSeconds}
-            sessionType={timer.sessionType}
-            status={timer.status}
-            isComplete={timer.isComplete}
-          />
-          <ControlBar
-            status={timer.status}
-            isComplete={timer.isComplete}
-            onStart={handleStart}
-            onPause={timer.pause}
-            onResume={timer.resume}
-            onReset={timer.reset}
-          />
-          <CycleSettings
-            totalCycles={timer.totalCycles}
-            onTotalCyclesChange={timer.setTotalCycles}
             disabled={isRunning}
+            youtubeUrl={deck.workUrl}
+            onYoutubeUrlChange={deck.setWorkUrl}
+            youtubeElementId="yt-player-work"
+            urlError={deck.workUrlError}
           />
-          <SessionIndicator
-            sessionType={timer.sessionType}
-            currentCycle={timer.currentCycle}
-            totalCycles={timer.totalCycles}
-            status={timer.status}
-            isComplete={timer.isComplete}
+
+          {/* Short Break Deck */}
+          <DeckPanel
+            type="shortBreak"
+            durationMinutes={timer.shortBreakDurationMinutes}
+            onDurationChange={timer.setShortBreakDuration}
+            isActive={isRunning && timer.sessionType === "shortBreak"}
+
+            disabled={isRunning}
+            youtubeUrl={deck.shortBreakUrl}
+            onYoutubeUrlChange={deck.setShortBreakUrl}
+            youtubeElementId="yt-player-short-break"
+            urlError={deck.shortBreakUrlError}
+          />
+
+          {/* Long Break Deck */}
+          <DeckPanel
+            type="longBreak"
+            durationMinutes={timer.longBreakDurationMinutes}
+            onDurationChange={timer.setLongBreakDuration}
+            isActive={isRunning && timer.sessionType === "longBreak"}
+
+            disabled={isRunning}
+            youtubeUrl={deck.longBreakUrl}
+            onYoutubeUrlChange={deck.setLongBreakUrl}
+            youtubeElementId="yt-player-long-break"
+            urlError={deck.longBreakUrlError}
           />
         </div>
-
-        {/* Right: Break Deck */}
-        <DeckPanel
-          type="break"
-          durationMinutes={timer.breakDurationMinutes}
-          onDurationChange={timer.setBreakDuration}
-          isActive={isRunning && timer.sessionType === "break"}
-          isPlaying={timer.status === "running" && timer.sessionType === "break"}
-          disabled={isRunning}
-          youtubeUrl={deck.breakUrl}
-          onYoutubeUrlChange={deck.setBreakUrl}
-          youtubeElementId="yt-player-break"
-          urlError={deck.breakUrlError}
-        />
       </div>
 
       <ErrorModal

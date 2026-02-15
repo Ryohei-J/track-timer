@@ -11,6 +11,12 @@ interface SessionIndicatorProps {
   isComplete: boolean;
 }
 
+const SESSION_LABELS: Record<SessionType, string> = {
+  work: "Work",
+  shortBreak: "Short Break",
+  longBreak: "Long Break",
+};
+
 export function SessionIndicator({
   sessionType,
   currentCycle,
@@ -24,8 +30,7 @@ export function SessionIndicator({
   } else if (status === "idle") {
     text = "Ready";
   } else {
-    const label = sessionType === "work" ? "Work" : "Break";
-    text = `${label} ${currentCycle} / ${totalCycles}`;
+    text = `${SESSION_LABELS[sessionType]} ${currentCycle} / ${totalCycles}`;
   }
 
   return (

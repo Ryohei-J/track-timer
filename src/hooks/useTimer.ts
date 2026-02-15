@@ -11,7 +11,9 @@ export interface UseTimerReturn {
   currentCycle: number;
   totalCycles: number;
   workDurationMinutes: number;
-  breakDurationMinutes: number;
+  shortBreakDurationMinutes: number;
+  longBreakDurationMinutes: number;
+  longBreakInterval: number;
   isComplete: boolean;
 
   start: () => void;
@@ -19,19 +21,25 @@ export interface UseTimerReturn {
   resume: () => void;
   reset: () => void;
   setWorkDuration: (minutes: number) => void;
-  setBreakDuration: (minutes: number) => void;
+  setShortBreakDuration: (minutes: number) => void;
+  setLongBreakDuration: (minutes: number) => void;
   setTotalCycles: (cycles: number) => void;
+  setLongBreakInterval: (n: number) => void;
 }
 
 const DEFAULT_WORK_MINUTES = 25;
-const DEFAULT_BREAK_MINUTES = 5;
+const DEFAULT_SHORT_BREAK_MINUTES = 5;
+const DEFAULT_LONG_BREAK_MINUTES = 15;
 const DEFAULT_CYCLES = 4;
+const DEFAULT_LONG_BREAK_INTERVAL = 4;
 const TICK_INTERVAL_MS = 250;
 
 export function useTimer(): UseTimerReturn {
   const [workDurationMinutes, setWorkDurationMinutes] = useLocalStorage("pomotimerx:workMinutes", DEFAULT_WORK_MINUTES);
-  const [breakDurationMinutes, setBreakDurationMinutes] = useLocalStorage("pomotimerx:breakMinutes", DEFAULT_BREAK_MINUTES);
+  const [shortBreakDurationMinutes, setShortBreakDurationMinutes] = useLocalStorage("pomotimerx:shortBreakMinutes", DEFAULT_SHORT_BREAK_MINUTES);
+  const [longBreakDurationMinutes, setLongBreakDurationMinutes] = useLocalStorage("pomotimerx:longBreakMinutes", DEFAULT_LONG_BREAK_MINUTES);
   const [totalCycles, setTotalCyclesState] = useLocalStorage("pomotimerx:totalCycles", DEFAULT_CYCLES);
+  const [longBreakInterval, setLongBreakIntervalState] = useLocalStorage("pomotimerx:longBreakInterval", DEFAULT_LONG_BREAK_INTERVAL);
 
   const [remainingSeconds, setRemainingSeconds] = useState(DEFAULT_WORK_MINUTES * 60);
   const [sessionType, setSessionType] = useState<SessionType>("work");
@@ -48,14 +56,18 @@ export function useTimer(): UseTimerReturn {
   const currentCycleRef = useRef(1);
   const totalCyclesRef = useRef(DEFAULT_CYCLES);
   const workMinutesRef = useRef(DEFAULT_WORK_MINUTES);
-  const breakMinutesRef = useRef(DEFAULT_BREAK_MINUTES);
+  const shortBreakMinutesRef = useRef(DEFAULT_SHORT_BREAK_MINUTES);
+  const longBreakMinutesRef = useRef(DEFAULT_LONG_BREAK_MINUTES);
+  const longBreakIntervalRef = useRef(DEFAULT_LONG_BREAK_INTERVAL);
 
   // Keep refs in sync with state
   sessionTypeRef.current = sessionType;
   currentCycleRef.current = currentCycle;
   totalCyclesRef.current = totalCycles;
   workMinutesRef.current = workDurationMinutes;
-  breakMinutesRef.current = breakDurationMinutes;
+  shortBreakMinutesRef.current = shortBreakDurationMinutes;
+  longBreakMinutesRef.current = longBreakDurationMinutes;
+  longBreakIntervalRef.current = longBreakInterval;
 
   const stopInterval = useCallback(() => {
     if (intervalRef.current !== null) {
@@ -68,25 +80,33 @@ export function useTimer(): UseTimerReturn {
     const curSession = sessionTypeRef.current;
     const curCycle = currentCycleRef.current;
     const maxCycles = totalCyclesRef.current;
+    const lbInterval = longBreakIntervalRef.current;
 
     if (curSession === "work") {
-      // Switch to break
-      const breakSec = breakMinutesRef.current * 60;
-      setSessionType("break");
-      setRemainingSeconds(breakSec);
-      anchorRemainingRef.current = breakSec;
-      anchorTimestampRef.current = Date.now();
-    } else {
-      // Break just ended
+      // Work just ended — check if all cycles are done
       if (curCycle >= maxCycles) {
-        // All cycles complete
         stopInterval();
         setStatus("idle");
         setIsComplete(true);
         setRemainingSeconds(0);
         return;
       }
-      // Switch to next work session
+      // Determine which break to use
+      if (curCycle % lbInterval === 0) {
+        const sec = longBreakMinutesRef.current * 60;
+        setSessionType("longBreak");
+        setRemainingSeconds(sec);
+        anchorRemainingRef.current = sec;
+        anchorTimestampRef.current = Date.now();
+      } else {
+        const sec = shortBreakMinutesRef.current * 60;
+        setSessionType("shortBreak");
+        setRemainingSeconds(sec);
+        anchorRemainingRef.current = sec;
+        anchorTimestampRef.current = Date.now();
+      }
+    } else {
+      // Break (short or long) just ended — move to next work session
       const nextCycle = curCycle + 1;
       const workSec = workMinutesRef.current * 60;
       setCurrentCycle(nextCycle);
@@ -160,14 +180,18 @@ export function useTimer(): UseTimerReturn {
   // Sync display when duration changes while idle
   useEffect(() => {
     if (status === "idle" && !isComplete) {
-      const seconds =
-        sessionType === "work"
-          ? workDurationMinutes * 60
-          : breakDurationMinutes * 60;
+      let seconds: number;
+      if (sessionType === "work") {
+        seconds = workDurationMinutes * 60;
+      } else if (sessionType === "shortBreak") {
+        seconds = shortBreakDurationMinutes * 60;
+      } else {
+        seconds = longBreakDurationMinutes * 60;
+      }
       setRemainingSeconds(seconds);
       anchorRemainingRef.current = seconds;
     }
-  }, [workDurationMinutes, breakDurationMinutes, status, sessionType, isComplete]);
+  }, [workDurationMinutes, shortBreakDurationMinutes, longBreakDurationMinutes, status, sessionType, isComplete]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -175,15 +199,23 @@ export function useTimer(): UseTimerReturn {
   }, [stopInterval]);
 
   const setWorkDuration = useCallback((minutes: number) => {
-    setWorkDurationMinutes(Math.max(1, Math.min(120, Math.floor(minutes) || 1)));
+    setWorkDurationMinutes(Math.max(1, Math.min(90, Math.floor(minutes) || 1)));
   }, []);
 
-  const setBreakDuration = useCallback((minutes: number) => {
-    setBreakDurationMinutes(Math.max(1, Math.min(60, Math.floor(minutes) || 1)));
+  const setShortBreakDuration = useCallback((minutes: number) => {
+    setShortBreakDurationMinutes(Math.max(1, Math.min(30, Math.floor(minutes) || 1)));
+  }, []);
+
+  const setLongBreakDuration = useCallback((minutes: number) => {
+    setLongBreakDurationMinutes(Math.max(1, Math.min(60, Math.floor(minutes) || 1)));
   }, []);
 
   const setTotalCycles = useCallback((cycles: number) => {
     setTotalCyclesState(Math.max(1, Math.min(20, Math.floor(cycles) || 1)));
+  }, []);
+
+  const setLongBreakInterval = useCallback((n: number) => {
+    setLongBreakIntervalState(Math.max(1, Math.min(10, Math.floor(n) || 1)));
   }, []);
 
   return {
@@ -193,14 +225,18 @@ export function useTimer(): UseTimerReturn {
     currentCycle,
     totalCycles,
     workDurationMinutes,
-    breakDurationMinutes,
+    shortBreakDurationMinutes,
+    longBreakDurationMinutes,
+    longBreakInterval,
     isComplete,
     start,
     pause,
     resume,
     reset,
     setWorkDuration,
-    setBreakDuration,
+    setShortBreakDuration,
+    setLongBreakDuration,
     setTotalCycles,
+    setLongBreakInterval,
   };
 }

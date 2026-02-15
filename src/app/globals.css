@@ -1,40 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #e0e0e0;
   --foreground: #1a1a1a;
-  --c-work: #2563eb;
-  --c-break: #16a34a;
-  --c-surface: #f5f5f5;
+  --c-accent: #f97316;
+  --c-work: #f97316;
+  --c-short-break: #f97316;
+  --c-long-break: #f97316;
+  --c-surface: #ffffff;
   --c-surface-alt: #e5e7eb;
+  --c-surface-deck: #f3f4f6;
   --c-text-primary: #1a1a1a;
   --c-text-secondary: #6b7280;
-  --c-vinyl-groove: #3a3a3a;
-  --c-vinyl-groove-alt: #2d2d2d;
+  --c-vinyl-groove: #2a2a2a;
+  --c-vinyl-groove-alt: #1a1a1a;
+  --c-divider: #d1d5db;
 }
 
 .dark {
-  --background: #1e1e2e;
+  --background: #3a3a3a;
   --foreground: #f0f0f0;
-  --c-work: #3b82f6;
-  --c-break: #22c55e;
-  --c-surface: #1e1e2e;
-  --c-surface-alt: #2a2a3e;
+  --c-accent: #f97316;
+  --c-work: #f97316;
+  --c-short-break: #f97316;
+  --c-long-break: #f97316;
+  --c-surface: #2c2c2c;
+  --c-surface-alt: #3a3a3a;
+  --c-surface-deck: #2c2c2c;
   --c-text-primary: #f0f0f0;
-  --c-text-secondary: #a0a0b0;
-  --c-vinyl-groove: #1a1a1a;
-  --c-vinyl-groove-alt: #0d0d0d;
+  --c-text-secondary: #a0a0a0;
+  --c-vinyl-groove: #111111;
+  --c-vinyl-groove-alt: #080808;
+  --c-divider: #4a4a4a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent: var(--c-accent);
   --color-work: var(--c-work);
-  --color-break: var(--c-break);
+  --color-short-break: var(--c-short-break);
+  --color-long-break: var(--c-long-break);
   --color-surface: var(--c-surface);
   --color-surface-alt: var(--c-surface-alt);
+  --color-surface-deck: var(--c-surface-deck);
   --color-text-primary: var(--c-text-primary);
   --color-text-secondary: var(--c-text-secondary);
+  --color-divider: var(--c-divider);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -47,4 +59,47 @@ body {
 .yt-player-container iframe {
   width: 100%;
   height: 100%;
+}
+
+/* Custom range slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2px;
+  background: var(--c-text-secondary);
+  border-radius: 1px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--c-text-secondary);
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--c-text-secondary);
+  cursor: pointer;
+}
+
+input[type="range"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+}
+
+input[type="range"]:disabled::-moz-range-thumb {
+  cursor: not-allowed;
 }

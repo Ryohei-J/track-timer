@@ -9,6 +9,12 @@ interface TimerDisplayProps {
   isComplete: boolean;
 }
 
+const SESSION_LABELS: Record<SessionType, string> = {
+  work: "Work",
+  shortBreak: "Short Break",
+  longBreak: "Long Break",
+};
+
 function formatTime(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
@@ -21,23 +27,16 @@ export function TimerDisplay({
   status,
   isComplete,
 }: TimerDisplayProps) {
-  const color =
-    isComplete
-      ? "text-text-secondary"
-      : sessionType === "work"
-        ? "text-work"
-        : "text-break";
-
   return (
-    <div className="flex flex-col items-center gap-2">
-      {status !== "idle" && !isComplete && (
-        <span
-          className={`text-sm font-medium uppercase tracking-widest ${color}`}
-        >
-          {sessionType === "work" ? "Work" : "Break"}
-        </span>
-      )}
-      <div className={`text-6xl md:text-8xl font-mono font-bold tabular-nums ${color}`}>
+    <div className="flex flex-col items-center gap-1">
+      <span className="text-xs font-medium uppercase tracking-widest text-accent h-4">
+        {isComplete ? "Complete" : SESSION_LABELS[sessionType]}
+      </span>
+      <div
+        className={`text-6xl md:text-8xl font-mono font-bold tabular-nums ${
+          isComplete ? "text-text-secondary" : "text-text-primary"
+        }`}
+      >
         {isComplete ? "00:00" : formatTime(remainingSeconds)}
       </div>
     </div>

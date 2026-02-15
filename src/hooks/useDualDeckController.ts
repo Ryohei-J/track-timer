@@ -26,16 +26,20 @@ function getYouTubeErrorMessage(code: number): string {
   }
 }
 
-export interface DualDeckState {
+export interface TripleDeckState {
   workUrl: string;
-  breakUrl: string;
+  shortBreakUrl: string;
+  longBreakUrl: string;
   workVideoId: string | null;
-  breakVideoId: string | null;
+  shortBreakVideoId: string | null;
+  longBreakVideoId: string | null;
   workUrlError: string | null;
-  breakUrlError: string | null;
+  shortBreakUrlError: string | null;
+  longBreakUrlError: string | null;
   playerError: string | null;
   setWorkUrl: (url: string) => void;
-  setBreakUrl: (url: string) => void;
+  setShortBreakUrl: (url: string) => void;
+  setLongBreakUrl: (url: string) => void;
   clearPlayerError: () => void;
   initializePlayers: () => void;
   playersInitialized: boolean;
@@ -47,16 +51,36 @@ export function useDualDeckController(
   remainingSeconds: number,
   isComplete: boolean,
   ytApiReady: boolean,
-): DualDeckState {
+): TripleDeckState {
   // URL state (persisted)
   const [workUrl, setWorkUrlState] = useLocalStorage("pomotimerx:workUrl", "");
-  const [breakUrl, setBreakUrlState] = useLocalStorage("pomotimerx:breakUrl", "");
+  const [shortBreakUrl, setShortBreakUrlState] = useLocalStorage("pomotimerx:shortBreakUrl", "");
+  const [longBreakUrl, setLongBreakUrlState] = useLocalStorage("pomotimerx:longBreakUrl", "");
   const [workVideoId, setWorkVideoId] = useState<string | null>(() => extractVideoId(workUrl));
-  const [breakVideoId, setBreakVideoId] = useState<string | null>(() => extractVideoId(breakUrl));
+  const [shortBreakVideoId, setShortBreakVideoId] = useState<string | null>(() => extractVideoId(shortBreakUrl));
+  const [longBreakVideoId, setLongBreakVideoId] = useState<string | null>(() => extractVideoId(longBreakUrl));
   const [workUrlError, setWorkUrlError] = useState<string | null>(null);
-  const [breakUrlError, setBreakUrlError] = useState<string | null>(null);
+  const [shortBreakUrlError, setShortBreakUrlError] = useState<string | null>(null);
+  const [longBreakUrlError, setLongBreakUrlError] = useState<string | null>(null);
   const [playerError, setPlayerError] = useState<string | null>(null);
   const [playersInitialized, setPlayersInitialized] = useState(false);
+
+  // Migrate old breakUrl to shortBreakUrl on first load
+  useEffect(() => {
+    const oldBreakUrl = localStorage.getItem("pomotimerx:breakUrl");
+    const existingShortBreak = localStorage.getItem("pomotimerx:shortBreakUrl");
+    if (oldBreakUrl && !existingShortBreak) {
+      try {
+        const parsed = JSON.parse(oldBreakUrl);
+        if (parsed) {
+          setShortBreakUrlState(parsed);
+        }
+      } catch {
+        // ignore parse errors
+      }
+      localStorage.removeItem("pomotimerx:breakUrl");
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-derive video IDs when URLs are hydrated from localStorage
   useEffect(() => {
@@ -67,21 +91,38 @@ export function useDualDeckController(
   }, [workUrl]);
 
   useEffect(() => {
-    if (!breakUrl) return;
-    const id = extractVideoId(breakUrl);
-    setBreakVideoId(id);
-    if (!id) setBreakUrlError("Invalid YouTube URL");
-  }, [breakUrl]);
+    if (!shortBreakUrl) return;
+    const id = extractVideoId(shortBreakUrl);
+    setShortBreakVideoId(id);
+    if (!id) setShortBreakUrlError("Invalid YouTube URL");
+  }, [shortBreakUrl]);
+
+  useEffect(() => {
+    if (!longBreakUrl) return;
+    const id = extractVideoId(longBreakUrl);
+    setLongBreakVideoId(id);
+    if (!id) setLongBreakUrlError("Invalid YouTube URL");
+  }, [longBreakUrl]);
 
   // Players
   const workPlayer = useYouTubePlayer({
     elementId: "yt-player-work",
     onError: (code) => setPlayerError(getYouTubeErrorMessage(code)),
   });
-  const breakPlayer = useYouTubePlayer({
-    elementId: "yt-player-break",
+  const shortBreakPlayer = useYouTubePlayer({
+    elementId: "yt-player-short-break",
     onError: (code) => setPlayerError(getYouTubeErrorMessage(code)),
   });
+  const longBreakPlayer = useYouTubePlayer({
+    elementId: "yt-player-long-break",
+    onError: (code) => setPlayerError(getYouTubeErrorMessage(code)),
+  });
+
+  const getPlayer = useCallback((type: SessionType) => {
+    if (type === "work") return workPlayer;
+    if (type === "shortBreak") return shortBreakPlayer;
+    return longBreakPlayer;
+  }, [workPlayer, shortBreakPlayer, longBreakPlayer]);
 
   // Refs for fade-in interval and session transition detection
   const fadeInIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -115,20 +156,37 @@ export function useDualDeckController(
     }
   }, []);
 
-  const setBreakUrl = useCallback((url: string) => {
-    setBreakUrlState(url);
+  const setShortBreakUrl = useCallback((url: string) => {
+    setShortBreakUrlState(url);
     if (!url.trim()) {
-      setBreakVideoId(null);
-      setBreakUrlError(null);
+      setShortBreakVideoId(null);
+      setShortBreakUrlError(null);
       return;
     }
     const id = extractVideoId(url);
     if (id) {
-      setBreakVideoId(id);
-      setBreakUrlError(null);
+      setShortBreakVideoId(id);
+      setShortBreakUrlError(null);
     } else {
-      setBreakVideoId(null);
-      setBreakUrlError("Invalid YouTube URL");
+      setShortBreakVideoId(null);
+      setShortBreakUrlError("Invalid YouTube URL");
+    }
+  }, []);
+
+  const setLongBreakUrl = useCallback((url: string) => {
+    setLongBreakUrlState(url);
+    if (!url.trim()) {
+      setLongBreakVideoId(null);
+      setLongBreakUrlError(null);
+      return;
+    }
+    const id = extractVideoId(url);
+    if (id) {
+      setLongBreakVideoId(id);
+      setLongBreakUrlError(null);
+    } else {
+      setLongBreakVideoId(null);
+      setLongBreakUrlError("Invalid YouTube URL");
     }
   }, []);
 
@@ -142,10 +200,17 @@ export function useDualDeckController(
 
   useEffect(() => {
     if (!ytApiReady || playersInitialized) return;
-    if (breakVideoId && !breakPlayer.isReady) {
-      breakPlayer.createPlayer(breakVideoId);
+    if (shortBreakVideoId && !shortBreakPlayer.isReady) {
+      shortBreakPlayer.createPlayer(shortBreakVideoId);
     }
-  }, [ytApiReady, breakVideoId, breakPlayer, playersInitialized]);
+  }, [ytApiReady, shortBreakVideoId, shortBreakPlayer, playersInitialized]);
+
+  useEffect(() => {
+    if (!ytApiReady || playersInitialized) return;
+    if (longBreakVideoId && !longBreakPlayer.isReady) {
+      longBreakPlayer.createPlayer(longBreakVideoId);
+    }
+  }, [ytApiReady, longBreakVideoId, longBreakPlayer, playersInitialized]);
 
   // Initialize players on Start (user gesture context)
   const initializePlayers = useCallback(() => {
@@ -155,20 +220,22 @@ export function useDualDeckController(
       if (!workPlayer.isReady) {
         workPlayer.createPlayer(workVideoId);
       }
-      // Play work deck immediately (within user gesture)
-      // Slight delay to ensure player is ready after creation
       setTimeout(() => {
         workPlayer.setVolume(100);
         workPlayer.play();
       }, 100);
     }
 
-    if (breakVideoId && !breakPlayer.isReady) {
-      breakPlayer.createPlayer(breakVideoId);
+    if (shortBreakVideoId && !shortBreakPlayer.isReady) {
+      shortBreakPlayer.createPlayer(shortBreakVideoId);
+    }
+
+    if (longBreakVideoId && !longBreakPlayer.isReady) {
+      longBreakPlayer.createPlayer(longBreakVideoId);
     }
 
     setPlayersInitialized(true);
-  }, [ytApiReady, workVideoId, breakVideoId, workPlayer, breakPlayer]);
+  }, [ytApiReady, workVideoId, shortBreakVideoId, longBreakVideoId, workPlayer, shortBreakPlayer, longBreakPlayer]);
 
   // Update video when URL changes while player exists
   useEffect(() => {
@@ -177,15 +244,20 @@ export function useDualDeckController(
   }, [workVideoId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!breakPlayer.isReady || !breakVideoId) return;
-    breakPlayer.loadVideo(breakVideoId);
-  }, [breakVideoId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!shortBreakPlayer.isReady || !shortBreakVideoId) return;
+    shortBreakPlayer.loadVideo(shortBreakVideoId);
+  }, [shortBreakVideoId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!longBreakPlayer.isReady || !longBreakVideoId) return;
+    longBreakPlayer.loadVideo(longBreakVideoId);
+  }, [longBreakVideoId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fade-out: last 5 seconds of session
   useEffect(() => {
     if (status !== "running") return;
 
-    const activePlayer = sessionType === "work" ? workPlayer : breakPlayer;
+    const activePlayer = getPlayer(sessionType);
 
     if (remainingSeconds <= FADE_DURATION && remainingSeconds > 0) {
       const volume = Math.round((remainingSeconds / FADE_DURATION) * 100);
@@ -193,22 +265,24 @@ export function useDualDeckController(
     } else if (remainingSeconds > FADE_DURATION) {
       activePlayer.setVolume(100);
     }
-  }, [remainingSeconds, status, sessionType, workPlayer, breakPlayer]);
+  }, [remainingSeconds, status, sessionType, getPlayer]);
 
   // Session transition: fade-in new deck
   useEffect(() => {
     if (status !== "running") return;
     if (sessionType === prevSessionTypeRef.current) return;
+
+    const prevType = prevSessionTypeRef.current;
     prevSessionTypeRef.current = sessionType;
 
-    // Stop outgoing deck
-    const outgoing = sessionType === "work" ? breakPlayer : workPlayer;
-    outgoing.stop();
+    // Pause outgoing deck
+    const outgoing = getPlayer(prevType);
+    outgoing.setVolume(0);
+    outgoing.pause();
 
     // Start incoming deck with fade-in
-    const incoming = sessionType === "work" ? workPlayer : breakPlayer;
+    const incoming = getPlayer(sessionType);
     incoming.setVolume(0);
-    incoming.seekToStart();
     incoming.play();
 
     clearFadeIn();
@@ -221,27 +295,31 @@ export function useDualDeckController(
         clearFadeIn();
       }
     }, FADE_IN_INTERVAL_MS);
-  }, [sessionType, status, workPlayer, breakPlayer, clearFadeIn]);
+  }, [sessionType, status, getPlayer, clearFadeIn]);
 
   // Pause/Resume sync
   useEffect(() => {
     if (status === "paused") {
       clearFadeIn();
       workPlayer.pause();
-      breakPlayer.pause();
+      shortBreakPlayer.pause();
+      longBreakPlayer.pause();
     } else if (status === "running" && playersInitialized) {
-      // Resume the active deck
-      const active = sessionType === "work" ? workPlayer : breakPlayer;
+      const active = getPlayer(sessionType);
       active.play();
     }
   }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reset / Complete: stop both
+  // Reset / Complete: stop all and reset position to start
   useEffect(() => {
     if (status === "idle") {
       clearFadeIn();
       workPlayer.stop();
-      breakPlayer.stop();
+      shortBreakPlayer.stop();
+      longBreakPlayer.stop();
+      workPlayer.seekToStart();
+      shortBreakPlayer.seekToStart();
+      longBreakPlayer.seekToStart();
       if (isComplete) {
         setPlayersInitialized(false);
       }
@@ -253,20 +331,25 @@ export function useDualDeckController(
     return () => {
       clearFadeIn();
       workPlayer.destroy();
-      breakPlayer.destroy();
+      shortBreakPlayer.destroy();
+      longBreakPlayer.destroy();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     workUrl,
-    breakUrl,
+    shortBreakUrl,
+    longBreakUrl,
     workVideoId,
-    breakVideoId,
+    shortBreakVideoId,
+    longBreakVideoId,
     workUrlError,
-    breakUrlError,
+    shortBreakUrlError,
+    longBreakUrlError,
     playerError,
     setWorkUrl,
-    setBreakUrl,
+    setShortBreakUrl,
+    setLongBreakUrl,
     clearPlayerError: () => setPlayerError(null),
     initializePlayers,
     playersInitialized,

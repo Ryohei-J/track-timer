@@ -1,7 +1,6 @@
 "use client";
 
 import type { SessionType } from "@/types/timer";
-import { VinylDisc } from "./VinylDisc";
 import { UrlInput } from "./UrlInput";
 import { YouTubeEmbed } from "./YouTubeEmbed";
 
@@ -10,7 +9,6 @@ interface DeckPanelProps {
   durationMinutes: number;
   onDurationChange: (minutes: number) => void;
   isActive: boolean;
-  isPlaying: boolean;
   disabled: boolean;
   youtubeUrl: string;
   onYoutubeUrlChange: (url: string) => void;
@@ -18,66 +16,75 @@ interface DeckPanelProps {
   urlError: string | null;
 }
 
+const LABELS: Record<SessionType, string> = {
+  work: "Work",
+  shortBreak: "Short Break",
+  longBreak: "Long Break",
+};
+
+const MAX_MINUTES: Record<SessionType, number> = {
+  work: 90,
+  shortBreak: 30,
+  longBreak: 60,
+};
+
 export function DeckPanel({
   type,
   durationMinutes,
   onDurationChange,
   isActive,
-  isPlaying,
   disabled,
   youtubeUrl,
   onYoutubeUrlChange,
   youtubeElementId,
   urlError,
 }: DeckPanelProps) {
-  const isWork = type === "work";
-  const label = isWork ? "Work Deck" : "Break Deck";
-  const max = isWork ? 120 : 60;
-
   return (
-    <div
-      className={`rounded-2xl p-6 border-2 transition-colors ${
-        isActive
-          ? isWork
-            ? "border-work bg-work/10"
-            : "border-break bg-break/10"
-          : "border-surface-alt bg-surface-alt"
-      }`}
-    >
-      <h2 className="text-xl font-semibold mb-4">{label}</h2>
-      <div className="mb-4">
-        <VinylDisc
-          isPlaying={isPlaying}
-          sessionType={type}
-          isActive={isActive}
+    <div className="p-5 flex flex-col gap-4">
+      <h2 className="text-lg font-bold flex items-center gap-2">
+        <span
+          className="w-2.5 h-2.5 rounded-full inline-block"
+          style={{ backgroundColor: isActive ? "var(--c-accent)" : "var(--c-text-secondary)" }}
         />
+        {LABELS[type]}
+      </h2>
+
+      <div>
+        <label className="block text-sm text-text-secondary mb-1">Time (min)</label>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min={1}
+            max={MAX_MINUTES[type]}
+            value={durationMinutes}
+            onChange={(e) => onDurationChange(Number(e.target.value))}
+            disabled={disabled}
+            className="flex-1"
+            aria-label={`${LABELS[type]} duration in minutes`}
+          />
+          <input
+            type="number"
+            min={1}
+            max={MAX_MINUTES[type]}
+            value={durationMinutes}
+            onChange={(e) => onDurationChange(Number(e.target.value))}
+            disabled={disabled}
+            className="w-10 text-sm font-mono text-right text-text-primary underline
+              bg-transparent border-none outline-none
+              [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
+              disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+        </div>
       </div>
-      <label className="block text-sm text-text-secondary mb-2">
-        Duration (minutes)
-      </label>
-      <input
-        type="number"
-        min={1}
-        max={max}
-        value={durationMinutes}
-        onChange={(e) => onDurationChange(Number(e.target.value))}
+
+      <UrlInput
+        url={youtubeUrl}
+        onUrlChange={onYoutubeUrlChange}
         disabled={disabled}
-        className="w-full rounded-lg bg-surface p-3 text-2xl text-center font-mono
-          border border-surface-alt focus:outline-none focus:border-work
-          disabled:opacity-50 disabled:cursor-not-allowed"
+        error={urlError}
       />
 
-      <div className="mt-4">
-        <UrlInput
-          url={youtubeUrl}
-          onUrlChange={onYoutubeUrlChange}
-          disabled={disabled}
-          error={urlError}
-          type={type}
-        />
-      </div>
-
-      <div className="mt-4 flex justify-center">
+      <div className="flex justify-center">
         <YouTubeEmbed elementId={youtubeElementId} />
       </div>
     </div>

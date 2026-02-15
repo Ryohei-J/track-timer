@@ -29,12 +29,12 @@ function Button({
       whileTap={disabled ? {} : { scale: 0.95 }}
       onClick={onClick}
       disabled={disabled}
-      className={`px-6 py-3 rounded-xl font-semibold text-lg transition-colors
+      className={`w-[110px] py-2 rounded-lg font-semibold text-base text-center transition-colors
         disabled:opacity-40 disabled:cursor-not-allowed
         ${
           variant === "primary"
-            ? "bg-work text-white hover:bg-work/80"
-            : "bg-surface-alt text-text-primary hover:bg-surface-alt/80"
+            ? "bg-surface-alt text-text-primary border border-divider hover:bg-surface-alt/80"
+            : "bg-surface-alt text-text-primary border border-divider hover:bg-surface-alt/80"
         }`}
     >
       {children}
