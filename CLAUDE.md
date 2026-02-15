@@ -1,43 +1,69 @@
 # プロジェクト概要
 
-ポモドーロタイマーとDJターンテーブルUIを組み合わせたNext.jsベースのWebアプリケーション。ユーザーは「作業」と「休憩」のセッションに異なる音楽ソース（主にYouTubeのURL）を割り当て、タイマーの切り替わりに合わせてトラックをシームレスに切り替えることができる。
+ポモドーロタイマーとYouTube音楽再生を組み合わせたNext.jsベースのWebアプリケーション。Work / Short Break / Long Break の3デッキにそれぞれYouTube URLを割り当て、タイマーの切り替わりに合わせてトラックを自動で切り替える。
 
-# コアコンセプト
+# 主要機能
 
-- **ターンテーブルUI**: 画面に2枚のディスクを表示。左が「作業」、右が「休憩」。
-- **オーディオ・コンディショニング**: 音楽を使って精神状態（集中 vs リカバリー）を切り替える。
-- **DJスタイルのトランジション**: タイマーがゼロになると、現在のトラックを自動フェードアウトし、次のディスクに切り替える。
-
-# 主要機能（MVP）
-
-- **デュアルデッキ構成**: 各デッキにTime（分）とAudio URL（YouTube）の入力フィールドを配置。
-- **タイマーロジック**: 作業/休憩の時間を自由に設定可能（25/5分に固定しない）。
-- **自動切替 & ループ**: トラックがタイマーより短い場合はループ再生。デッキ間の自動トランジション。
-- **リピートサイクル**: 作業/休憩のセット数を設定可能。
-- **ローカル永続化**: 設定（URL/時間）をlocalStorageに保存（初期版ではDB不要）。
-- **一時停止**: タイマー一時停止時は音楽も同時に停止する。
-- **セッション完了**: 全サイクル終了後は自動停止。
-- **ダーク/ライトモード**: 両方に対応する。
-- **エラー通知**: 無効なURLや埋め込み不可の動画の場合、ポップアップ/モーダルで別のURLの入力を促す。
+- **3デッキ構成**: Work / Short Break / Long Break の各デッキに時間（スライダー）とYouTube URLの入力フィールドを配置
+- **タイマー**: 各セッションの時間を自由に設定可能。`Date.now()`ベースでバックグラウンドタブでも正確に動作
+- **自動切替 & ループ**: トラックがタイマーより短い場合はループ再生。セッション終了時に自動フェードアウト（最後5秒）して次デッキへ遷移
+- **サイクル設定**: 作業/休憩のサイクル数、Long Break の挿入間隔を設定可能
+- **ローカル永続化**: URL・時間・テーマ設定を localStorage に保存（DB不使用）
+- **一時停止**: タイマー一時停止時は音楽も同時に停止
+- **セッション完了**: 全サイクル終了後は自動停止
+- **ダーク/ライトモード**: CSS変数ベースのテーマシステム。デフォルトはダーク
+- **エラー通知**: 無効なURLや埋め込み不可の動画の場合、モーダルで通知
 
 # 技術スタック
 
-- **フレームワーク**: Next.js（App Router）
+- **フレームワーク**: Next.js 16（App Router）
 - **パッケージマネージャ**: pnpm
-- **スタイリング**: Tailwind CSS
-- **アニメーション**: Framer Motion（ディスクの回転やクロスフェード用）
-- **状態管理**: React Hooks（useState, useEffect）
-- **API**: YouTube IFrame Player API（MVP）。今後フリー音源配信サイトに順次対応。
-- **永続化**: localStorage
+- **スタイリング**: Tailwind CSS v4（CSS変数 + `@theme inline`）
+- **アニメーション**: Framer Motion（`motion/react`）
+- **フォント**: Inter（UI） + Geist Mono（タイマー・数値）、`next/font/google` で読み込み
+- **API**: YouTube IFrame Player API
+- **永続化**: localStorage（`useLocalStorage` フック）
 - **デプロイ**: Vercel
-- **テスト**: 最低限のテストを実装
 
-# 実装の詳細と制約
+# プロジェクト構成
 
-- **自動再生**: ブラウザの自動再生制限を回避するため、最初のユーザー操作（スタートボタン）時に両プレーヤーを初期化する必要がある。
-- **フェーディング**: セッション終了前の最後の5秒間にsetVolumeによるボリューム漸減を実装する。
-- **表示要件**: YouTube Playerは利用規約に準拠するため、小さくても画面上に表示し続ける必要がある。
-- **No-DBポリシー**: 初期版ではすべてのユーザー設定をクライアント側に保存する。
-- **タイマー精度**: バックグラウンドタブでのスロットリング対策として、`Date.now()`ベースの経過時間計算を採用する。
-- **レスポンシブ**: 基本はデスクトップ使用を想定。最低限のモバイル対応を行う。
-- **通知音（サウンドオーバーレイ）**: MVP時点では対応しない。将来的に追加を検討。
+```
+src/
+├── app/
+│   ├── layout.tsx          # ルートレイアウト（フォント、テーマ初期化）
+│   ├── page.tsx            # メインページ（3デッキ + タイマー + コントロール）
+│   └── globals.css         # CSS変数テーマ、Tailwind設定
+├── components/
+│   ├── Button.tsx          # 共通ボタン（primary / secondary バリアント）
+│   ├── ControlBar.tsx      # Start / Pause / Resume / Reset ボタン群
+│   ├── CycleSettings.tsx   # サイクル数・Long Break間隔の設定
+│   ├── DeckPanel.tsx       # 各デッキのパネル（時間スライダー + URL入力 + YouTube埋め込み）
+│   ├── ErrorModal.tsx      # エラーモーダル
+│   ├── SessionIndicator.tsx # 現在のセッション状態表示
+│   ├── ThemeScript.tsx     # FOUC防止用インラインスクリプト
+│   ├── ThemeToggle.tsx     # ダーク/ライト切替ボタン
+│   ├── TimerDisplay.tsx    # タイマーカウントダウン表示
+│   ├── UrlInput.tsx        # YouTube URL入力フィールド
+│   └── YouTubeEmbed.tsx    # YouTube IFrame Player コンテナ
+├── hooks/
+│   ├── useDualDeckController.ts  # 3デッキの再生制御（フェード、ループ、切替）
+│   ├── useLocalStorage.ts        # localStorage永続化フック
+│   ├── useTimer.ts               # タイマーロジック（セッション管理、サイクル制御）
+│   ├── useYouTubeApi.ts          # YouTube IFrame API のスクリプト読み込み
+│   └── useYouTubePlayer.ts       # 個別YouTube Playerの制御
+├── lib/
+│   └── youtube.ts          # YouTube URL解析ユーティリティ
+└── types/
+    ├── timer.ts            # SessionType, TimerStatus 等の型定義
+    └── youtube.d.ts        # YouTube IFrame API のグローバル型定義
+```
+
+# 実装上の制約
+
+- **自動再生制限**: ブラウザポリシーにより、最初のユーザー操作（Startボタン）時にプレーヤーを初期化する必要がある
+- **YouTube表示要件**: 利用規約に準拠するため、プレーヤーを小さくても画面上に表示し続ける（`w-40 h-24`）
+- **レスポンシブ**: デスクトップ使用を想定。`md`（768px）をブレークポイントとして1カラム↔3カラムを切り替え
+
+# ブランドガイドライン
+
+UIデザインの詳細は [docs/BRAND_GUIDELINES.md](docs/BRAND_GUIDELINES.md) を参照。
