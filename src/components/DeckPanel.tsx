@@ -79,7 +79,7 @@ export function DeckPanel({
             value={durationMinutes}
             onChange={(e) => onDurationChange(Number(e.target.value))}
             disabled={disabled}
-            className="w-10 text-sm font-mono text-right text-text-primary underline
+            className="w-12 text-lg font-semibold text-right text-text-primary underline
               bg-transparent border-none outline-none
               [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
               disabled:opacity-50 disabled:cursor-not-allowed"

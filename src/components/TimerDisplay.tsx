@@ -42,7 +42,7 @@ export function TimerDisplay({
         {sessionLabel}
       </span>
       <div
-        className={`text-6xl md:text-8xl font-mono font-bold tabular-nums ${
+        className={`text-6xl md:text-8xl font-bold tabular-nums ${
           isComplete ? "text-text-secondary" : "text-text-primary"
         }`}
       >
