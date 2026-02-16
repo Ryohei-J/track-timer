@@ -16,7 +16,7 @@ export function CycleSettings({
   disabled,
 }: CycleSettingsProps) {
   return (
-    <div className="flex flex-wrap items-center gap-4 text-sm text-text-secondary">
+    <div className="flex flex-wrap items-center justify-end gap-4 text-sm text-text-secondary">
       <div className="flex items-center gap-2">
         <label>Cycles</label>
         <input

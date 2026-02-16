@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTimer } from "@/hooks/useTimer";
 import { useYouTubeApi } from "@/hooks/useYouTubeApi";
 import { useDualDeckController } from "@/hooks/useDualDeckController";
+import { useAlarm } from "@/hooks/useAlarm";
 import { DeckPanel } from "@/components/DeckPanel";
 import { TimerDisplay } from "@/components/TimerDisplay";
 import { ControlBar } from "@/components/ControlBar";
@@ -12,6 +13,7 @@ import { CycleSettings } from "@/components/CycleSettings";
 import { SessionIndicator } from "@/components/SessionIndicator";
 import { ErrorModal } from "@/components/ErrorModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { AlarmToggle } from "@/components/AlarmToggle";
 import { Footer } from "@/components/Footer";
 
 export default function Home() {
@@ -24,6 +26,7 @@ export default function Home() {
     timer.isComplete,
     ytApiReady,
   );
+  const alarm = useAlarm(timer.remainingSeconds, timer.status, timer.sessionType);
 
   const isRunning = timer.status !== "idle";
 
@@ -78,6 +81,10 @@ export default function Home() {
               onLongBreakIntervalChange={timer.setLongBreakInterval}
               disabled={isRunning}
             />
+            <AlarmToggle
+              enabled={alarm.alarmEnabled}
+              onToggle={alarm.setAlarmEnabled}
+            />
           </div>
         </div>
 
@@ -89,12 +96,15 @@ export default function Home() {
             durationMinutes={timer.workDurationMinutes}
             onDurationChange={timer.setWorkDuration}
             isActive={isRunning && timer.sessionType === "work"}
-
             disabled={isRunning}
             youtubeUrl={deck.workUrl}
             onYoutubeUrlChange={deck.setWorkUrl}
             youtubeElementId="yt-player-work"
             urlError={deck.workUrlError}
+            audioSource={deck.workAudioSource}
+            onAudioSourceChange={deck.setWorkAudioSource}
+            libraryTrackId={deck.workLibraryTrackId}
+            onLibraryTrackChange={deck.setWorkLibraryTrackId}
           />
 
           {/* Short Break Deck */}
@@ -103,12 +113,15 @@ export default function Home() {
             durationMinutes={timer.shortBreakDurationMinutes}
             onDurationChange={timer.setShortBreakDuration}
             isActive={isRunning && timer.sessionType === "shortBreak"}
-
             disabled={isRunning}
             youtubeUrl={deck.shortBreakUrl}
             onYoutubeUrlChange={deck.setShortBreakUrl}
             youtubeElementId="yt-player-short-break"
             urlError={deck.shortBreakUrlError}
+            audioSource={deck.shortBreakAudioSource}
+            onAudioSourceChange={deck.setShortBreakAudioSource}
+            libraryTrackId={deck.shortBreakLibraryTrackId}
+            onLibraryTrackChange={deck.setShortBreakLibraryTrackId}
           />
 
           {/* Long Break Deck */}
@@ -117,16 +130,20 @@ export default function Home() {
             durationMinutes={timer.longBreakDurationMinutes}
             onDurationChange={timer.setLongBreakDuration}
             isActive={isRunning && timer.sessionType === "longBreak"}
-
             disabled={isRunning}
             youtubeUrl={deck.longBreakUrl}
             onYoutubeUrlChange={deck.setLongBreakUrl}
             youtubeElementId="yt-player-long-break"
             urlError={deck.longBreakUrlError}
+            audioSource={deck.longBreakAudioSource}
+            onAudioSourceChange={deck.setLongBreakAudioSource}
+            libraryTrackId={deck.longBreakLibraryTrackId}
+            onLibraryTrackChange={deck.setLongBreakLibraryTrackId}
           />
         </div>
       </div>
 
+      <div className="flex-1" />
       <Footer />
 
       <ErrorModal

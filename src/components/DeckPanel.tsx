@@ -1,6 +1,8 @@
 "use client";
 
-import type { SessionType } from "@/types/timer";
+import type { SessionType, AudioSource } from "@/types/timer";
+import { AudioSourceToggle } from "./AudioSourceToggle";
+import { LibrarySelect } from "./LibrarySelect";
 import { UrlInput } from "./UrlInput";
 import { YouTubeEmbed } from "./YouTubeEmbed";
 
@@ -14,6 +16,10 @@ interface DeckPanelProps {
   onYoutubeUrlChange: (url: string) => void;
   youtubeElementId: string;
   urlError: string | null;
+  audioSource: AudioSource;
+  onAudioSourceChange: (source: AudioSource) => void;
+  libraryTrackId: string;
+  onLibraryTrackChange: (id: string) => void;
 }
 
 const LABELS: Record<SessionType, string> = {
@@ -38,6 +44,10 @@ export function DeckPanel({
   onYoutubeUrlChange,
   youtubeElementId,
   urlError,
+  audioSource,
+  onAudioSourceChange,
+  libraryTrackId,
+  onLibraryTrackChange,
 }: DeckPanelProps) {
   return (
     <div className="p-5 flex flex-col gap-4">
@@ -77,15 +87,31 @@ export function DeckPanel({
         </div>
       </div>
 
-      <UrlInput
-        url={youtubeUrl}
-        onUrlChange={onYoutubeUrlChange}
+      <AudioSourceToggle
+        value={audioSource}
+        onChange={onAudioSourceChange}
         disabled={disabled}
-        error={urlError}
       />
 
-      <div className="flex justify-center">
-        <YouTubeEmbed elementId={youtubeElementId} />
+      {audioSource === "library" && (
+        <LibrarySelect
+          trackId={libraryTrackId}
+          onTrackChange={onLibraryTrackChange}
+          disabled={disabled}
+        />
+      )}
+
+      <div className={audioSource !== "youtube" ? "hidden" : undefined}>
+        <UrlInput
+          url={youtubeUrl}
+          onUrlChange={onYoutubeUrlChange}
+          disabled={disabled}
+          error={urlError}
+        />
+
+        <div className="flex justify-center mt-4">
+          <YouTubeEmbed elementId={youtubeElementId} />
+        </div>
       </div>
     </div>
   );
