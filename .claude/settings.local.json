@@ -10,7 +10,9 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(git -C /Users/ryoheijin/Projects/pomotimer-x log --oneline --all)",
-      "Bash(git -C /Users/ryoheijin/Projects/pomotimer-x diff:*)"
+      "Bash(git -C /Users/ryoheijin/Projects/pomotimer-x diff:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)"
     ]
   }
 }

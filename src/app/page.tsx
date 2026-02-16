@@ -77,8 +77,8 @@ export default function Home() {
             <CycleSettings
               totalCycles={timer.totalCycles}
               onTotalCyclesChange={timer.setTotalCycles}
-              longBreakInterval={timer.longBreakInterval}
-              onLongBreakIntervalChange={timer.setLongBreakInterval}
+              longBreakEnabled={timer.longBreakEnabled}
+              onLongBreakEnabledChange={timer.setLongBreakEnabled}
               disabled={isRunning}
             />
             <AlarmToggle

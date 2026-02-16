@@ -13,7 +13,7 @@ export interface UseTimerReturn {
   workDurationMinutes: number;
   shortBreakDurationMinutes: number;
   longBreakDurationMinutes: number;
-  longBreakInterval: number;
+  longBreakEnabled: boolean;
   isComplete: boolean;
 
   start: () => void;
@@ -24,14 +24,13 @@ export interface UseTimerReturn {
   setShortBreakDuration: (minutes: number) => void;
   setLongBreakDuration: (minutes: number) => void;
   setTotalCycles: (cycles: number) => void;
-  setLongBreakInterval: (n: number) => void;
+  setLongBreakEnabled: (enabled: boolean) => void;
 }
 
 const DEFAULT_WORK_MINUTES = 25;
 const DEFAULT_SHORT_BREAK_MINUTES = 5;
 const DEFAULT_LONG_BREAK_MINUTES = 15;
 const DEFAULT_CYCLES = 4;
-const DEFAULT_LONG_BREAK_INTERVAL = 4;
 const TICK_INTERVAL_MS = 250;
 
 export function useTimer(): UseTimerReturn {
@@ -39,7 +38,7 @@ export function useTimer(): UseTimerReturn {
   const [shortBreakDurationMinutes, setShortBreakDurationMinutes] = useLocalStorage("pomotimerx:shortBreakMinutes", DEFAULT_SHORT_BREAK_MINUTES);
   const [longBreakDurationMinutes, setLongBreakDurationMinutes] = useLocalStorage("pomotimerx:longBreakMinutes", DEFAULT_LONG_BREAK_MINUTES);
   const [totalCycles, setTotalCyclesState] = useLocalStorage("pomotimerx:totalCycles", DEFAULT_CYCLES);
-  const [longBreakInterval, setLongBreakIntervalState] = useLocalStorage("pomotimerx:longBreakInterval", DEFAULT_LONG_BREAK_INTERVAL);
+  const [longBreakEnabled, setLongBreakEnabledState] = useLocalStorage("pomotimerx:longBreakEnabled", true);
 
   const [remainingSeconds, setRemainingSeconds] = useState(DEFAULT_WORK_MINUTES * 60);
   const [sessionType, setSessionType] = useState<SessionType>("work");
@@ -58,7 +57,7 @@ export function useTimer(): UseTimerReturn {
   const workMinutesRef = useRef(DEFAULT_WORK_MINUTES);
   const shortBreakMinutesRef = useRef(DEFAULT_SHORT_BREAK_MINUTES);
   const longBreakMinutesRef = useRef(DEFAULT_LONG_BREAK_MINUTES);
-  const longBreakIntervalRef = useRef(DEFAULT_LONG_BREAK_INTERVAL);
+  const longBreakEnabledRef = useRef(true);
 
   // Keep refs in sync with state
   sessionTypeRef.current = sessionType;
@@ -67,7 +66,7 @@ export function useTimer(): UseTimerReturn {
   workMinutesRef.current = workDurationMinutes;
   shortBreakMinutesRef.current = shortBreakDurationMinutes;
   longBreakMinutesRef.current = longBreakDurationMinutes;
-  longBreakIntervalRef.current = longBreakInterval;
+  longBreakEnabledRef.current = longBreakEnabled;
 
   const stopInterval = useCallback(() => {
     if (intervalRef.current !== null) {
@@ -80,33 +79,41 @@ export function useTimer(): UseTimerReturn {
     const curSession = sessionTypeRef.current;
     const curCycle = currentCycleRef.current;
     const maxCycles = totalCyclesRef.current;
-    const lbInterval = longBreakIntervalRef.current;
+    const lbEnabled = longBreakEnabledRef.current;
 
     if (curSession === "work") {
-      // Work just ended — check if all cycles are done
       if (curCycle >= maxCycles) {
-        stopInterval();
-        setStatus("idle");
-        setIsComplete(true);
-        setRemainingSeconds(0);
+        // Last work session ended
+        if (lbEnabled) {
+          // Go to long break before completing
+          const sec = longBreakMinutesRef.current * 60;
+          setSessionType("longBreak");
+          setRemainingSeconds(sec);
+          anchorRemainingRef.current = sec;
+          anchorTimestampRef.current = Date.now();
+        } else {
+          // No long break — complete immediately
+          stopInterval();
+          setStatus("idle");
+          setIsComplete(true);
+          setRemainingSeconds(0);
+        }
         return;
       }
-      // Determine which break to use
-      if (curCycle % lbInterval === 0) {
-        const sec = longBreakMinutesRef.current * 60;
-        setSessionType("longBreak");
-        setRemainingSeconds(sec);
-        anchorRemainingRef.current = sec;
-        anchorTimestampRef.current = Date.now();
-      } else {
-        const sec = shortBreakMinutesRef.current * 60;
-        setSessionType("shortBreak");
-        setRemainingSeconds(sec);
-        anchorRemainingRef.current = sec;
-        anchorTimestampRef.current = Date.now();
-      }
+      // Not the last cycle — short break
+      const sec = shortBreakMinutesRef.current * 60;
+      setSessionType("shortBreak");
+      setRemainingSeconds(sec);
+      anchorRemainingRef.current = sec;
+      anchorTimestampRef.current = Date.now();
+    } else if (curSession === "longBreak") {
+      // Long break ended — complete
+      stopInterval();
+      setStatus("idle");
+      setIsComplete(true);
+      setRemainingSeconds(0);
     } else {
-      // Break (short or long) just ended — move to next work session
+      // Short break ended — move to next work session
       const nextCycle = curCycle + 1;
       const workSec = workMinutesRef.current * 60;
       setCurrentCycle(nextCycle);
@@ -214,8 +221,8 @@ export function useTimer(): UseTimerReturn {
     setTotalCyclesState(Math.max(1, Math.min(20, Math.floor(cycles) || 1)));
   }, []);
 
-  const setLongBreakInterval = useCallback((n: number) => {
-    setLongBreakIntervalState(Math.max(1, Math.min(10, Math.floor(n) || 1)));
+  const setLongBreakEnabled = useCallback((enabled: boolean) => {
+    setLongBreakEnabledState(enabled);
   }, []);
 
   return {
@@ -227,7 +234,7 @@ export function useTimer(): UseTimerReturn {
     workDurationMinutes,
     shortBreakDurationMinutes,
     longBreakDurationMinutes,
-    longBreakInterval,
+    longBreakEnabled,
     isComplete,
     start,
     pause,
@@ -237,6 +244,6 @@ export function useTimer(): UseTimerReturn {
     setShortBreakDuration,
     setLongBreakDuration,
     setTotalCycles,
-    setLongBreakInterval,
+    setLongBreakEnabled,
   };
 }
